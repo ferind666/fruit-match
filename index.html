@@ -2,19 +2,21 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍎 水果消消乐</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>水果消消乐</title>
 <style>
   :root {
-    --bg: #1a1a2e;
-    --panel: #16213e;
-    --accent: #e94560;
-    --gold: #f5c518;
-    --text: #eee;
-    --cell-bg: #0f3460;
-    --cell-hover: #1a508b;
-    --cell-select: #e94560;
-    --muted: #8899aa;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #f78166;
+    --accent2: #d2a8ff;
+    --gold: #d2991d;
+    --green: #3fb950;
+    --cell: #21262d;
+    --cell-border: #30363d;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,881 +27,722 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100dvh;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
     color: var(--text);
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
   }
 
-  .game-wrapper {
-    background: var(--panel);
-    border-radius: 24px;
-    padding: 24px 28px 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  .game {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    max-width: 520px;
-    width: 95%;
+    gap: 20px;
+    padding: 32px 24px 24px;
+    max-width: 460px;
+    width: 100%;
   }
 
-  h1 {
-    font-size: 2rem;
-    letter-spacing: 0.02em;
-    background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-  }
-
-  /* ── Auth bar ── */
-  .auth-bar {
+  /* ── Header ── */
+  .header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.82rem;
-    color: var(--muted);
+    justify-content: space-between;
     width: 100%;
-    justify-content: center;
-    min-height: 32px;
   }
-  .auth-bar .user-info {
+  .logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* ── Auth ── */
+  .auth-pill {
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-  .auth-bar .username {
-    color: var(--gold);
-    font-weight: 600;
-  }
-  .auth-bar .btn-link {
-    background: none;
-    border: none;
-    color: var(--accent);
-    cursor: pointer;
     font-size: 0.8rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 6px;
+  }
+  .auth-pill .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-weight: 500;
+    font-size: 0.78rem;
+  }
+  .auth-pill .user-chip .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .pill-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-weight: 500;
     transition: background 0.15s;
   }
-  .auth-bar .btn-link:hover { background: rgba(233,68,96,0.15); }
-  .auth-bar .btn-link.leaderboard-btn { color: var(--gold); }
+  .pill-btn:hover { background: var(--cell); }
+  .pill-btn.accent { border-color: var(--accent); color: var(--accent); }
 
-  /* ── Stats ── */
-  .stats {
+  /* ── Score board ── */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
     display: flex;
-    gap: 24px;
     align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
   }
-  .stat {
-    background: var(--cell-bg);
-    border-radius: 12px;
-    padding: 8px 18px;
-    text-align: center;
-    min-width: 80px;
-  }
-  .stat-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+  .score-card .label {
+    font-size: 0.75rem;
     color: var(--muted);
+    font-weight: 500;
   }
-  .stat-value {
-    font-size: 1.4rem;
+  .score-card .value {
+    font-size: 1.6rem;
     font-weight: 700;
-    color: var(--gold);
+    font-variant-numeric: tabular-nums;
   }
-  .stat.combo .stat-value { color: var(--accent); }
+  .score-card .value.score-val { color: var(--gold); }
+  .score-card .value.combo-val { color: var(--accent); }
 
   /* ── Grid ── */
+  .grid-wrap {
+    position: relative;
+    width: 100%;
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    gap: 4px;
-    background: #0a0a1a;
+    gap: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 6px;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    max-width: 440px;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
-    position: relative;
-    overflow: hidden;
+    aspect-ratio: 1;
+    touch-action: none;
+    cursor: grab;
   }
+  .grid:active { cursor: grabbing; }
 
   .cell {
-    background: var(--cell-bg);
+    background: var(--cell);
+    border: 1px solid var(--cell-border);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(1.4rem, 5vw, 2.2rem);
-    cursor: pointer;
+    font-size: clamp(1.6rem, 5.5vw, 2.4rem);
     position: relative;
-    aspect-ratio: 1 / 1;
-    will-change: transform, opacity, background;
-    transform: translateZ(0);
-    transition: transform 0.12s ease-out, background 0.12s ease-out, box-shadow 0.12s ease-out;
+    aspect-ratio: 1;
+    transition: transform 0.1s ease, background 0.1s ease;
   }
-  .cell:hover {
-    background: var(--cell-hover);
-    transform: translateZ(0) scale(1.06);
-    z-index: 2;
+
+  /* Drag highlight */
+  .cell.drag-over {
+    background: #2a3040;
+    border-color: var(--accent);
   }
-  .cell.selected {
-    background: var(--cell-select);
-    transform: translateZ(0) scale(1.1);
-    box-shadow: 0 0 18px rgba(233,68,96,0.7);
-    z-index: 3;
-    animation: pulse 0.7s ease-in-out infinite;
-  }
+
+  /* Match pop */
   .cell.matched {
-    animation: pop 0.28s ease-out forwards;
+    animation: pop 0.3s ease forwards;
     pointer-events: none;
   }
   .cell.drop {
-    animation: dropIn 0.25s ease-out;
+    animation: dropIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .cell.drop-fast {
+    animation: dropIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 12px rgba(233,68,96,0.6); }
-    50%      { box-shadow: 0 0 26px rgba(233,68,96,0.95); }
-  }
   @keyframes pop {
-    0%   { transform: translateZ(0) scale(1); opacity: 1; }
-    50%  { transform: translateZ(0) scale(1.2); opacity: 0.5; }
-    100% { transform: translateZ(0) scale(0); opacity: 0; }
+    0%   { transform: scale(1); opacity: 1; }
+    40%  { transform: scale(1.25); opacity: 0.6; }
+    100% { transform: scale(0); opacity: 0; }
   }
   @keyframes dropIn {
-    0%   { transform: translateZ(0) translateY(-100%); opacity: 0; }
-    60%  { transform: translateZ(0) translateY(4px); opacity: 1; }
-    100% { transform: translateZ(0) translateY(0); opacity: 1; }
+    0%   { transform: translateY(-120%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
   }
-  @keyframes shake {
-    0%, 100% { transform: translateZ(0) translateX(0); }
-    20%  { transform: translateZ(0) translateX(-6px); }
-    40%  { transform: translateZ(0) translateX(6px); }
-    60%  { transform: translateZ(0) translateX(-4px); }
-    80%  { transform: translateZ(0) translateX(4px); }
+
+  /* Swap animation — handled inline via JS transforms */
+
+  /* Score float */
+  .float-text {
+    position: absolute;
+    pointer-events: none;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--gold);
+    z-index: 30;
+    animation: floatUp 0.9s ease-out forwards;
+    white-space: nowrap;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
   }
-  @keyframes scorePopup {
-    0%   { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
-    40%  { opacity: 1; transform: translate(-50%, -28px) scale(1.2); }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translate(-50%, 0) scale(0.7); }
+    30%  { opacity: 1; transform: translate(-50%, -20px) scale(1.15); }
     100% { opacity: 0; transform: translate(-50%, -52px) scale(1); }
   }
 
-  .score-pop {
-    position: absolute;
-    pointer-events: none;
-    font-weight: 900;
-    font-size: 1.1rem;
-    color: var(--gold);
-    text-shadow: 0 0 8px rgba(0,0,0,0.6);
-    animation: scorePopup 0.8s ease-out forwards;
-    z-index: 20;
-    left: 50%;
-    white-space: nowrap;
-  }
-
-  /* ── Buttons ── */
-  .btn-row {
+  /* ── Bottom bar ── */
+  .bottom-bar {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 10px;
+    width: 100%;
   }
   .btn {
-    padding: 10px 24px;
+    flex: 1;
+    padding: 12px 0;
     border-radius: 12px;
-    border: none;
-    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.15s, filter 0.15s;
-    will-change: transform;
+    transition: background 0.15s, border-color 0.15s;
+    text-align: center;
   }
-  .btn:active { transform: scale(0.95); }
-  .btn-reset {
+  .btn:hover { background: var(--cell); }
+  .btn.primary {
     background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(233,68,96,0.4);
+    border-color: var(--accent);
+    color: #0d1117;
   }
-  .btn-reset:hover {
-    filter: brightness(1.15);
-    box-shadow: 0 6px 18px rgba(233,68,96,0.55);
-  }
-  .btn-hint {
-    background: #2d3436;
-    color: #dfe6e9;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  }
-  .btn-hint:hover { filter: brightness(1.2); }
+  .btn.primary:hover { filter: brightness(1.1); }
 
-  /* ── Combo toast ── */
-  .combo-toast {
+  /* ── Toast ── */
+  .toast {
     position: fixed;
-    top: 50%;
+    top: 16px;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    font-size: 3rem;
-    font-weight: 900;
-    pointer-events: none;
-    color: var(--gold);
-    text-shadow: 0 0 20px rgba(245,197,24,0.9), 0 4px 8px rgba(0,0,0,0.6);
-    z-index: 100;
-    will-change: transform, opacity;
+    transform: translateX(-50%) translateY(-120%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+    z-index: 200;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   }
-  .combo-toast.show {
-    animation: toastOut 1.0s ease-out forwards;
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.combo { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Moves counter ── */
+  .moves-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 4px;
   }
-  @keyframes toastOut {
-    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
-    25%  { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-    60%  { opacity: 1; }
-    100% { transform: translate(-50%, -60%) scale(1); opacity: 0; }
+  .moves-text {
+    font-size: 0.82rem;
+    color: var(--muted);
   }
+  .moves-text b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .save-dot {
+    font-size: 0.75rem;
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+  .save-dot.ok { color: var(--green); }
 
   /* ── Modal ── */
-  .modal-overlay {
+  .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.65);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 200;
+    z-index: 300;
     animation: fadeIn 0.2s ease;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
   .modal {
-    background: var(--panel);
-    border-radius: 20px;
-    padding: 28px 24px 20px;
-    max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 24px 22px;
     width: 90%;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
   .modal h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
     text-align: center;
-    font-size: 1.4rem;
-    color: var(--gold);
   }
-  .modal .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .modal .field { display: flex; flex-direction: column; gap: 4px; }
   .modal .field label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: var(--muted);
+    font-weight: 600;
   }
   .modal .field input {
     padding: 10px 14px;
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: var(--cell-bg);
+    border: 1px solid var(--border);
+    background: var(--cell);
     color: var(--text);
     font-size: 0.95rem;
     outline: none;
     transition: border-color 0.15s;
   }
-  .modal .field input:focus {
-    border-color: var(--accent);
-  }
-  .modal .modal-error {
-    color: var(--accent);
-    font-size: 0.82rem;
-    text-align: center;
-    min-height: 20px;
-  }
-  .modal .modal-btns {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-  .modal .modal-btns .btn {
-    flex: 1;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-  }
-  .btn-secondary {
-    background: var(--cell-bg);
-    color: var(--text);
-  }
-  .btn-primary:hover { filter: brightness(1.15); }
-  .btn-secondary:hover { filter: brightness(1.2); }
-
-  .modal .switch-text {
+  .modal .field input:focus { border-color: var(--accent); }
+  .modal .error { color: var(--accent); font-size: 0.82rem; text-align: center; min-height: 20px; }
+  .modal .row { display: flex; gap: 10px; }
+  .modal .row .btn { flex: 1; }
+  .modal .switch {
     text-align: center;
     font-size: 0.82rem;
     color: var(--muted);
   }
-  .modal .switch-text button {
-    background: none;
-    border: none;
+  .modal .switch a {
     color: var(--accent);
     cursor: pointer;
-    font-size: 0.82rem;
     font-weight: 600;
   }
 
   /* ── Leaderboard table ── */
-  .lb-table-wrap {
-    max-height: 340px;
-    overflow-y: auto;
-  }
-  .lb-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-  }
+  .lb-wrap { max-height: 320px; overflow-y: auto; }
+  .lb-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
   .lb-table th {
     text-align: left;
     padding: 8px 10px;
     color: var(--muted);
     font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    cursor: pointer;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
   }
-  .lb-table th.active { color: var(--gold); }
-  .lb-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-  .lb-table .rank { color: var(--gold); font-weight: 700; width: 40px; }
-  .lb-table .rank.top { color: var(--accent); }
-  .lb-table .lb-username { color: var(--text); }
-  .lb-table .lb-score { color: var(--gold); font-weight: 600; }
-  .lb-table .lb-combo { color: var(--accent); font-weight: 600; }
-
-  /* ── Save indicator ── */
-  .save-indicator {
-    font-size: 0.7rem;
-    color: var(--muted);
-    min-height: 16px;
-    transition: opacity 0.3s;
-  }
-  .save-indicator.saving { color: var(--gold); }
-  .save-indicator.saved  { color: #4ecb71; }
+  .lb-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .lb-table .rk { font-weight: 700; width: 36px; }
+  .lb-table .rk.top { color: var(--accent); }
+  .lb-table .sc { color: var(--gold); font-weight: 600; }
+  .lb-table .cb { color: var(--accent2); font-weight: 600; }
 
   /* ── Responsive ── */
-  @media (max-width: 480px) {
-    .game-wrapper { padding: 16px 12px 12px; gap: 10px; }
-    .grid { gap: 3px; padding: 4px; }
-    .cell { border-radius: 7px; }
-    .stats { gap: 12px; }
-    h1 { font-size: 1.5rem; }
+  @media (max-width: 420px) {
+    .game { padding: 20px 14px 16px; gap: 14px; }
+    .grid { gap: 2px; padding: 4px; border-radius: 12px; }
+    .cell { border-radius: 8px; }
+    .score-card { padding: 10px 14px; }
+    .score-card .value { font-size: 1.3rem; }
+    .logo { font-size: 1.3rem; }
   }
 </style>
 </head>
 <body>
 
-<div class="game-wrapper">
-  <h1>🍎 水果消消乐</h1>
-
-  <!-- Auth bar -->
-  <div class="auth-bar" id="authBar">
-    <button class="btn-link" id="btnLogin" onclick="showModal('login')">🔑 登录</button>
-    <button class="btn-link" id="btnRegister" onclick="showModal('register')">📝 注册</button>
-    <button class="btn-link leaderboard-btn" onclick="showLeaderboard()">🏆 排行榜</button>
-    <div class="user-info" id="userInfo" style="display:none">
-      <span>👤</span>
-      <span class="username" id="displayName"></span>
-      <button class="btn-link" onclick="logout()">退出</button>
-      <button class="btn-link leaderboard-btn" onclick="showLeaderboard()">🏆 排行榜</button>
+<div class="game">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">水果<span>消消乐</span></div>
+    <div class="auth-pill" id="authPill">
+      <button class="pill-btn" id="btnLogin" onclick="showAuth('login')">登录</button>
+      <button class="pill-btn accent" id="btnRegister" onclick="showAuth('register')">注册</button>
+      <div class="user-chip" id="userChip" style="display:none">
+        <span class="dot"></span>
+        <span id="displayName"></span>
+        <span style="cursor:pointer;margin-left:2px" onclick="doLogout()">✕</span>
+      </div>
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-label">得分</div>
-      <div class="stat-value" id="score">0</div>
+  <!-- Score -->
+  <div class="scoreboard">
+    <div class="score-card">
+      <div><div class="label">得分</div><div class="value score-val" id="scoreVal">0</div></div>
     </div>
-    <div class="stat">
-      <div class="stat-label">步数</div>
-      <div class="stat-value" id="moves">0</div>
-    </div>
-    <div class="stat combo">
-      <div class="stat-label">连击</div>
-      <div class="stat-value" id="combo">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">最高连击</div>
-      <div class="stat-value" id="bestCombo">0</div>
+    <div class="score-card">
+      <div><div class="label">最高连击</div><div class="value combo-val" id="comboVal">0</div></div>
     </div>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <!-- Grid -->
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
 
-  <div class="save-indicator" id="saveIndicator"></div>
+  <!-- Moves -->
+  <div class="moves-row">
+    <span class="moves-text">步数 <b id="movesCount">0</b></span>
+    <span class="save-dot" id="saveDot"></span>
+  </div>
 
-  <div class="btn-row">
-    <button class="btn btn-reset" id="btnReset">🔄 重新开始</button>
-    <button class="btn btn-hint" id="btnHint">💡 提示</button>
+  <!-- Buttons -->
+  <div class="bottom-bar">
+    <button class="btn" id="btnHint" onclick="doHint()">💡 提示</button>
+    <button class="btn" id="btnLeaderboard" onclick="showLeaderboard()">🏆 排行</button>
+    <button class="btn primary" id="btnReset" onclick="doReset()">重新开始</button>
   </div>
 </div>
 
-<div class="combo-toast" id="comboToast"></div>
-
-<!-- Modal container -->
-<div id="modalContainer"></div>
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
 
 <script>
-/* ═════════════════════════════════════════════════════════════════════
-   Fruit Match-3  —  Game Engine + Backend Integration
-   ═══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════
+   水果消消乐 — Swipe Edition
+   ══════════════════════════════════════════════════ */
 
 const ROWS = 8, COLS = 8;
 const FRUITS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑'];
-const FRUIT_COUNT = FRUITS.length;
+const N = FRUITS.length;
+const API = '';
 
-const API_BASE = '';
-
+/* DOM */
 const gridEl   = document.getElementById('grid');
-const scoreEl  = document.getElementById('score');
-const movesEl  = document.getElementById('moves');
-const comboEl  = document.getElementById('combo');
-const bestCbEl = document.getElementById('bestCombo');
-const toastEl  = document.getElementById('comboToast');
-const saveInd  = document.getElementById('saveIndicator');
+const scoreEl  = document.getElementById('scoreVal');
+const comboEl  = document.getElementById('comboVal');
+const movesEl  = document.getElementById('movesCount');
+const saveDot  = document.getElementById('saveDot');
+const toastEl  = document.getElementById('toast');
 
-// State
-let board   = [];
-let score   = 0;
-let moves   = 0;
-let combo   = 0;
-let bestCombo = 0;
-let selected = null;
-let busy    = false;
+/* State */
+let board = [], score = 0, moves = 0, bestCombo = 0;
+let busy = false;
+let cells = new Map(); // "r,c" → HTMLElement
 
-// Cell DOM cache — keyed by "r,c"
-const cellCache = new Map();
+/* ═══════════════ API ═══════════════ */
+function tok()  { return localStorage.getItem('fmt'); }
+function user() { return localStorage.getItem('fmu'); }
+function setAuth(t, u) { localStorage.setItem('fmt', t); localStorage.setItem('fmu', u); }
+function clearAuth() { localStorage.removeItem('fmt'); localStorage.removeItem('fmu'); }
 
-/* ═══════════════════════════════════════════════════
-   API helpers
-   ═══════════════════════════════════════════════════ */
-
-function getToken() {
-  return localStorage.getItem('fruit-match-token');
+async function api(m, p, b) {
+  const o = { method: m, headers: { 'Content-Type': 'application/json' } };
+  if (tok()) o.headers['Authorization'] = 'Bearer ' + tok();
+  if (b) o.body = JSON.stringify(b);
+  const r = await fetch(API + '/api' + p, o);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'fail');
+  return d;
 }
 
-function getUsername() {
-  return localStorage.getItem('fruit-match-username');
-}
-
-function setAuth(token, username) {
-  localStorage.setItem('fruit-match-token', token);
-  localStorage.setItem('fruit-match-username', username);
-}
-
-function clearAuth() {
-  localStorage.removeItem('fruit-match-token');
-  localStorage.removeItem('fruit-match-username');
-}
-
-async function api(method, path, body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  const token = getToken();
-  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-  if (body) opts.body = JSON.stringify(body);
-
-  const res = await fetch(API_BASE + '/api' + path, opts);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || '请求失败');
-  return data;
-}
-
-/* ── Auth ── */
-
-async function doRegister(username, password) {
-  const data = await api('POST', '/auth/register', { username, password });
-  setAuth(data.token, data.username);
-  return data;
-}
-
-async function doLogin(username, password) {
-  const data = await api('POST', '/auth/login', { username, password });
-  setAuth(data.token, data.username);
-  return data;
-}
-
-function logout() {
-  clearAuth();
-  updateAuthUI();
-}
-
-/* ── Game persistence ── */
-
-async function saveGame() {
-  if (!getToken()) return;
-  try {
-    saveInd.textContent = '💾 保存中…';
-    saveInd.className = 'save-indicator saving';
-    await api('POST', '/game/save', { board, score, moves, combo, bestCombo });
-    saveInd.textContent = '✅ 已保存';
-    saveInd.className = 'save-indicator saved';
-    setTimeout(() => {
-      if (saveInd.textContent === '✅ 已保存') {
-        saveInd.textContent = '';
-      }
-    }, 2000);
-  } catch {
-    saveInd.textContent = '⚠ 保存失败';
-    saveInd.className = 'save-indicator';
-  }
-}
-
-async function loadGame() {
-  if (!getToken()) return;
-  try {
-    const data = await api('GET', '/game/load');
-    if (!data.hasSave) return;
-
-    // Ask user
-    const yes = confirm(`检测到存档 (${data.updatedAt})\n得分: ${data.score}  步数: ${data.moves}\n\n是否恢复？`);
-    if (!yes) {
-      // Delete old save so it doesn't keep asking
-      await api('DELETE', '/game/delete');
-      return;
-    }
-
-    busy = false;
-    selected = null;
-    score = data.score;
-    moves = data.moves;
-    combo = data.combo;
-    bestCombo = data.bestCombo;
-    board = data.board;
-
-    scoreEl.textContent = score;
-    movesEl.textContent = moves;
-    comboEl.textContent = combo;
-    bestCbEl.textContent = bestCombo;
-
-    cellCache.clear();
-    gridEl.innerHTML = '';
-    render();
-    saveInd.textContent = '✅ 存档已恢复';
-    saveInd.className = 'save-indicator saved';
-    setTimeout(() => { saveInd.textContent = ''; }, 2000);
-  } catch {
-    // Silently fail — game still works offline
-  }
-}
-
-async function submitScore() {
-  if (!getToken()) return;
-  if (score === 0 && bestCombo === 0) return;
-  try {
-    await api('POST', '/leaderboard/submit', { score, moves, bestCombo });
-  } catch {
-    // Silently fail
-  }
-}
-
-/* ── Auth UI ── */
-
-function updateAuthUI() {
-  const token = getToken();
-  const username = getUsername();
-  document.getElementById('btnLogin').style.display = token ? 'none' : '';
-  document.getElementById('btnRegister').style.display = token ? 'none' : '';
-  document.getElementById('userInfo').style.display = token ? 'flex' : 'none';
-  if (token) {
-    document.getElementById('displayName').textContent = username;
-  }
-}
-
-/* ── Modal system ── */
-
-function showModal(type) {
-  const container = document.getElementById('modalContainer');
-  const isRegister = type === 'register';
-  container.innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+/* ═══════════════ Auth ═══════════════ */
+function showAuth(mode) {
+  const isReg = mode === 'register';
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
-        <h2>${isRegister ? '📝 注册' : '🔑 登录'}</h2>
-        <div class="field">
-          <label>用户名</label>
-          <input id="modalUsername" type="text" maxlength="20" placeholder="输入用户名" autocomplete="username">
+        <h2>${isReg ? '创建账号' : '登录'}</h2>
+        <div class="field"><label>用户名</label><input id="mu" maxlength="20" placeholder="输入用户名" autocomplete="username"></div>
+        <div class="field"><label>密码</label><input id="mp" type="password" maxlength="64" placeholder="输入密码"></div>
+        <div class="error" id="me"></div>
+        <div class="row">
+          <button class="btn primary" id="ms">${isReg ? '注册' : '登录'}</button>
+          <button class="btn" onclick="closeModal()">取消</button>
         </div>
-        <div class="field">
-          <label>密码</label>
-          <input id="modalPassword" type="password" maxlength="64" placeholder="输入密码" autocomplete="${isRegister ? 'new-password' : 'current-password'}">
-        </div>
-        <div class="modal-error" id="modalError"></div>
-        <div class="modal-btns">
-          <button class="btn btn-primary" id="modalSubmit">${isRegister ? '注册' : '登录'}</button>
-          <button class="btn btn-secondary" onclick="closeModal()">取消</button>
-        </div>
-        <div class="switch-text">
-          ${isRegister ? '已有账号？' : '没有账号？'}
-          <button onclick="showModal('${isRegister ? 'login' : 'register'}')">${isRegister ? '去登录' : '去注册'}</button>
-        </div>
+        <div class="switch">${isReg ? '已有账号？' : '没有账号？'}<a onclick="showAuth('${isReg ? 'login' : 'register'}')">${isReg ? '去登录' : '去注册'}</a></div>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  const usernameInput = document.getElementById('modalUsername');
-  const passwordInput = document.getElementById('modalPassword');
-  const submitBtn = document.getElementById('modalSubmit');
-  const errorEl = document.getElementById('modalError');
+  const u = document.getElementById('mu'), p = document.getElementById('mp');
+  const e = document.getElementById('me'), s = document.getElementById('ms');
+  u.focus();
 
-  usernameInput.focus();
-
-  async function handleSubmit() {
-    errorEl.textContent = '';
-    const u = usernameInput.value.trim();
-    const p = passwordInput.value;
-    if (!u || !p) { errorEl.textContent = '请填写所有字段'; return; }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = '处理中…';
+  async function go() {
+    e.textContent = '';
+    if (!u.value.trim() || !p.value) { e.textContent = '请填写所有字段'; return; }
+    s.disabled = true; s.textContent = '…';
     try {
-      if (isRegister) {
-        await doRegister(u, p);
-      } else {
-        await doLogin(u, p);
-      }
+      const d = await api('POST', '/auth/' + (isReg ? 'register' : 'login'), { username: u.value.trim(), password: p.value });
+      setAuth(d.token, d.username);
       updateAuthUI();
       closeModal();
-      // Try to load saved game
-      await loadGame();
-    } catch (e) {
-      errorEl.textContent = e.message;
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = isRegister ? '注册' : '登录';
-    }
+      // Check save
+      try {
+        const save = await api('GET', '/game/load');
+        if (save.hasSave && confirm(`检测到存档 (${save.updatedAt})\n得分 ${save.score} · 步数 ${save.moves}\n是否恢复？`)) {
+          loadFromSave(save);
+        } else if (save.hasSave) {
+          await api('DELETE', '/game/delete');
+        }
+      } catch(_){}
+    } catch(x) { e.textContent = x.message; }
+    s.disabled = false; s.textContent = isReg ? '注册' : '登录';
   }
-
-  submitBtn.addEventListener('click', handleSubmit);
-  passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSubmit();
-  });
-  usernameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') passwordInput.focus();
-  });
+  s.addEventListener('click', go);
+  p.addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
 }
 
-function closeModal() {
-  document.getElementById('modalContainer').innerHTML = '';
+function doLogout() { clearAuth(); updateAuthUI(); }
+
+function updateAuthUI() {
+  const t = tok();
+  document.getElementById('btnLogin').style.display = t ? 'none' : '';
+  document.getElementById('btnRegister').style.display = t ? 'none' : '';
+  document.getElementById('userChip').style.display = t ? 'flex' : 'none';
+  if (t) document.getElementById('displayName').textContent = user();
 }
 
-/* ── Leaderboard ── */
+function loadFromSave(save) {
+  busy = false;
+  score = save.score; moves = save.moves;
+  bestCombo = save.bestCombo; board = save.board;
+  scoreEl.textContent = score; movesEl.textContent = moves; comboEl.textContent = bestCombo;
+  cells.clear(); gridEl.innerHTML = '';
+  render();
+}
 
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+/* ═══════════════ Leaderboard ═══════════════ */
 async function showLeaderboard() {
-  const container = document.getElementById('modalContainer');
-  container.innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal" style="max-width:460px">
-        <h2>🏆 排行榜</h2>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <button class="btn btn-primary btn-small" id="lbSortScore" style="font-size:0.82rem;padding:6px 14px">按得分</button>
-          <button class="btn btn-secondary btn-small" id="lbSortCombo" style="font-size:0.82rem;padding:6px 14px">按连击</button>
-        </div>
-        <div class="lb-table-wrap" id="lbTableWrap">
-          <p style="text-align:center;color:var(--muted);padding:20px">加载中…</p>
-        </div>
-        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:440px"><h2>🏆 排行榜</h2>
+        <div style="display:flex;gap:8px"><button class="btn primary" id="lbs" style="font-size:0.82rem;padding:8px 0">按得分</button><button class="btn" id="lbc" style="font-size:0.82rem;padding:8px 0">按连击</button></div>
+        <div class="lb-wrap" id="lbw"><p style="text-align:center;color:var(--muted);padding:20px">加载中…</p></div>
+        <button class="btn" onclick="closeModal()">关闭</button>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  async function loadLB(sortBy) {
-    const wrap = document.getElementById('lbTableWrap');
-    document.getElementById('lbSortScore').className = 'btn ' + (sortBy === 'score' ? 'btn-primary' : 'btn-secondary') + ' btn-small';
-    document.getElementById('lbSortCombo').className = 'btn ' + (sortBy === 'combo' ? 'btn-primary' : 'btn-secondary') + ' btn-small';
-
+  async function load(sort) {
+    document.getElementById('lbs').className = 'btn' + (sort === 'score' ? ' primary' : '');
+    document.getElementById('lbc').className = 'btn' + (sort === 'combo' ? ' primary' : '');
     try {
-      const data = await api('GET', '/leaderboard?sortBy=' + sortBy + '&limit=30');
-      if (data.leaderboard.length === 0) {
-        wrap.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">还没有记录，快去玩一局吧！</p>';
+      const d = await api('GET', '/leaderboard?sortBy=' + sort + '&limit=30');
+      if (!d.leaderboard.length) {
+        document.getElementById('lbw').innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">暂无记录</p>';
         return;
       }
-
-      const rows = data.leaderboard.map((r, i) => `
-        <tr>
-          <td class="rank${i < 3 ? ' top' : ''}">#${r.rank}</td>
-          <td class="lb-username">${escHtml(r.username)}</td>
-          <td class="lb-score">${r.score}</td>
-          <td class="lb-combo">${r.best_combo}</td>
-          <td style="font-size:0.75rem;color:var(--muted)">${r.played_at?.slice(0,10) || ''}</td>
-        </tr>
-      `).join('');
-
-      wrap.innerHTML = `
-        <table class="lb-table">
-          <thead>
-            <tr>
-              <th>#</th><th>玩家</th>
-              <th class="${sortBy === 'score' ? 'active' : ''}">得分</th>
-              <th class="${sortBy === 'combo' ? 'active' : ''}">最高连击</th>
-              <th>日期</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>`;
-    } catch {
-      wrap.innerHTML = '<p style="text-align:center;color:var(--accent);padding:20px">加载失败</p>';
+      document.getElementById('lbw').innerHTML = `
+        <table class="lb-table"><thead><tr><th>#</th><th>玩家</th><th>得分</th><th>连击</th><th>日期</th></tr></thead>
+        <tbody>${d.leaderboard.map((r,i) => `
+          <tr><td class="rk${i<3?' top':''}">${r.rank}</td><td>${esc(r.username)}</td><td class="sc">${r.score}</td><td class="cb">${r.best_combo}</td><td style="font-size:0.75rem;color:var(--muted)">${(r.played_at||'').slice(0,10)}</td></tr>`).join('')}</tbody></table>`;
+    } catch(_) {
+      document.getElementById('lbw').innerHTML = '<p style="text-align:center;color:var(--accent);padding:20px">加载失败</p>';
     }
   }
-
-  document.getElementById('lbSortScore').addEventListener('click', () => loadLB('score'));
-  document.getElementById('lbSortCombo').addEventListener('click', () => loadLB('combo'));
-  await loadLB('score');
+  document.getElementById('lbs').addEventListener('click', () => load('score'));
+  document.getElementById('lbc').addEventListener('click', () => load('combo'));
+  await load('score');
 }
 
-function escHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+/* ═══════════════ Toast ═══════════════ */
+let toastTimer;
+function toast(msg, cls) {
+  clearTimeout(toastTimer);
+  toastEl.textContent = msg;
+  toastEl.className = 'toast ' + (cls || '');
+  requestAnimationFrame(() => { toastEl.classList.add('show'); });
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1400);
 }
 
-/* ═══════════════════════════════════════════════════
-   Game Engine
-   ═══════════════════════════════════════════════════ */
-
-/* ── Init board (no matches) ── */
+/* ═══════════════ Game Engine ═══════════════ */
 function initBoard() {
   board = [];
   for (let r = 0; r < ROWS; r++) {
     board[r] = [];
     for (let c = 0; c < COLS; c++) {
-      let fruit;
+      let f;
       do {
-        fruit = randFruit();
+        f = (Math.random() * N) | 0;
       } while (
-        (r >= 2 && board[r-1][c] === fruit && board[r-2][c] === fruit) ||
-        (c >= 2 && board[r][c-1] === fruit && board[r][c-2] === fruit)
+        (r >= 2 && board[r-1][c] === f && board[r-2][c] === f) ||
+        (c >= 2 && board[r][c-1] === f && board[r][c-2] === f)
       );
-      board[r][c] = fruit;
+      board[r][c] = f;
     }
   }
 }
 
-function randFruit() {
-  return (Math.random() * FRUIT_COUNT) | 0;
-}
+function k(r,c) { return r + ',' + c; }
 
-/* ── Cell cache helpers ── */
-function key(r, c) { return r + ',' + c; }
-
-function createCell(r, c) {
-  const el = document.createElement('div');
-  el.className = 'cell';
-  el.dataset.r = r;
-  el.dataset.c = c;
-  el.addEventListener('click', () => onCellClick(r, c));
-  el.addEventListener('pointerdown', (e) => {
-    if (busy) e.preventDefault();
-  });
-  return el;
-}
-
-/* ── Render: differential update ── */
 function render() {
   const seen = new Set();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const k = key(r, c);
-      seen.add(k);
-      let el = cellCache.get(k);
+      const key = k(r,c); seen.add(key);
+      let el = cells.get(key);
       if (!el) {
-        el = createCell(r, c);
-        cellCache.set(k, el);
+        el = document.createElement('div');
+        el.className = 'cell';
+        el.dataset.r = r; el.dataset.c = c;
+        cells.set(key, el);
         gridEl.appendChild(el);
       }
       el.textContent = FRUITS[board[r][c]];
-
-      if (selected && selected.r === r && selected.c === c) {
-        el.classList.add('selected');
-      } else {
-        el.classList.remove('selected');
-      }
+      el.classList.remove('drag-over');
     }
   }
-  for (const [k, el] of cellCache) {
-    if (!seen.has(k)) {
-      el.remove();
-      cellCache.delete(k);
-    }
+  for (const [key, el] of cells) {
+    if (!seen.has(key)) { el.remove(); cells.delete(key); }
   }
 }
 
-/* ── Click & Swap ── */
-function onCellClick(r, c) {
+/* ═══════════════ SWIPE MECHANICS ═══════════════ */
+
+let dragStart = null;     // { r, c, x, y }
+let dragCurrent = null;   // current cell being hovered
+let dragEl = null;        // the cell element being dragged
+let dragOffset = { x: 0, y: 0 };
+
+function getCellFromPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el || !el.dataset.r) return null;
+  return { r: +el.dataset.r, c: +el.dataset.c, el };
+}
+
+gridEl.addEventListener('pointerdown', (e) => {
   if (busy) return;
+  const cell = getCellFromPoint(e.clientX, e.clientY);
+  if (!cell) return;
+  dragStart = { r: cell.r, c: cell.c, x: e.clientX, y: e.clientY };
+  dragCurrent = cell;
+  dragEl = cell.el;
+  dragEl.style.transition = 'none';
+  gridEl.setPointerCapture(e.pointerId);
+});
 
-  if (!selected) {
-    selected = { r, c };
-    render();
-    return;
-  }
+gridEl.addEventListener('pointermove', (e) => {
+  if (!dragStart || busy) return;
+  const dx = e.clientX - dragStart.x;
+  const dy = e.clientY - dragStart.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
 
-  const sr = selected.r, sc = selected.c;
-  if (sr === r && sc === c) {
-    selected = null;
-    render();
-    return;
-  }
+  if (dist < 12) return; // dead zone
 
-  const dr = Math.abs(sr - r);
-  const dc = Math.abs(sc - c);
-  if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
-    trySwap(sr, sc, r, c);
+  // Clear previous highlight
+  if (dragCurrent) dragCurrent.el.classList.remove('drag-over');
+
+  // Determine direction
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  let tr, tc;
+  if (absDx > absDy) {
+    tc = dragStart.c + (dx > 0 ? 1 : -1);
+    tr = dragStart.r;
   } else {
-    selected = { r, c };
-    render();
+    tr = dragStart.r + (dy > 0 ? 1 : -1);
+    tc = dragStart.c;
   }
-}
 
-async function trySwap(r1, c1, r2, c2) {
+  // Clamp
+  if (tr < 0 || tr >= ROWS || tc < 0 || tc >= COLS) {
+    // Move the cell visually with finger, clamped
+    const clampX = absDx > absDy ? Math.max(-30, Math.min(30, dx)) : 0;
+    const clampY = absDx <= absDy ? Math.max(-30, Math.min(30, dy)) : 0;
+    dragEl.style.transform = `translate(${clampX}px, ${clampY}px)`;
+    return;
+  }
+
+  dragCurrent = { r: tr, c: tc, el: cells.get(k(tr, tc)) };
+  if (dragCurrent.el) dragCurrent.el.classList.add('drag-over');
+
+  // Move cell visually
+  const cellSize = gridEl.clientWidth / COLS;
+  const maxMove = cellSize * 0.7;
+  const moveX = absDx > absDy ? Math.max(-maxMove, Math.min(maxMove, dx)) : 0;
+  const moveY = absDx <= absDy ? Math.max(-maxMove, Math.min(maxMove, dy)) : 0;
+  dragEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+});
+
+gridEl.addEventListener('pointerup', (e) => {
+  if (!dragStart || busy) { dragStart = null; dragCurrent = null; dragEl = null; return; }
+
+  // Reset cell position
+  if (dragEl) {
+    dragEl.style.transition = 'transform 0.15s ease';
+    dragEl.style.transform = '';
+    setTimeout(() => { if (dragEl) { dragEl.style.transition = ''; } }, 160);
+  }
+  if (dragCurrent) dragCurrent.el.classList.remove('drag-over');
+
+  const dx = e.clientX - dragStart.x;
+  const dy = e.clientY - dragStart.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist >= 12) {
+    // Swipe — determine target
+    const absDx = Math.abs(dx), absDy = Math.abs(dy);
+    let tr = dragStart.r, tc = dragStart.c;
+    if (absDx > absDy) tc += dx > 0 ? 1 : -1;
+    else tr += dy > 0 ? 1 : -1;
+    if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) {
+      doSwap(dragStart.r, dragStart.c, tr, tc);
+    }
+  }
+
+  dragStart = null; dragCurrent = null; dragEl = null;
+});
+
+gridEl.addEventListener('pointercancel', () => {
+  if (dragEl) { dragEl.style.transition = ''; dragEl.style.transform = ''; }
+  if (dragCurrent) dragCurrent.el.classList.remove('drag-over');
+  dragStart = null; dragCurrent = null; dragEl = null;
+});
+
+/* ═══════════════ Swap & Match ═══════════════ */
+async function doSwap(r1, c1, r2, c2) {
   busy = true;
-  selected = null;
-  render();
 
+  // Animate
   animateSwap(r1, c1, r2, c2);
-
   swap(r1, c1, r2, c2);
   render();
-  await rafSleep(150);
+  await sleep(160);
 
   const matches = findMatches();
   if (matches.size > 0) {
     moves++;
     movesEl.textContent = moves;
-    combo = 0;
     await processChain(matches);
   } else {
     animateSwap(r1, c1, r2, c2);
     swap(r1, c1, r2, c2);
     render();
-    await rafSleep(150);
-    shakeCells(r1, c1, r2, c2);
+    await sleep(160);
   }
 
   busy = false;
@@ -907,143 +750,84 @@ async function trySwap(r1, c1, r2, c2) {
 }
 
 function swap(r1, c1, r2, c2) {
-  const t = board[r1][c1];
-  board[r1][c1] = board[r2][c2];
-  board[r2][c2] = t;
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
 }
 
 function animateSwap(r1, c1, r2, c2) {
-  const a = cellCache.get(key(r1, c1));
-  const b = cellCache.get(key(r2, c2));
+  const a = cells.get(k(r1, c1)), b = cells.get(k(r2, c2));
   if (!a || !b) return;
-
-  const aRect = a.getBoundingClientRect();
-  const bRect = b.getBoundingClientRect();
-  const dx = bRect.left - aRect.left;
-  const dy = bRect.top - aRect.top;
-
-  a.style.transition = 'transform 0.15s ease-out';
-  b.style.transition = 'transform 0.15s ease-out';
-  a.style.transform = `translateZ(0) translate(${dx}px, ${dy}px)`;
-  b.style.transform = `translateZ(0) translate(${-dx}px, ${-dy}px)`;
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      a.style.transition = '';
-      a.style.transform = '';
-      b.style.transition = '';
-      b.style.transform = '';
-    });
-  });
-}
-
-function shakeCells(r1, c1, r2, c2) {
-  const a = cellCache.get(key(r1, c1));
-  const b = cellCache.get(key(r2, c2));
-  if (a) { a.style.animation = 'shake 0.35s ease'; }
-  if (b) { b.style.animation = 'shake 0.35s ease'; }
+  const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
+  const dx = br.left - ar.left, dy = br.top - ar.top;
+  a.style.transition = 'transform 0.16s ease';
+  b.style.transition = 'transform 0.16s ease';
+  a.style.transform = `translate(${dx}px, ${dy}px)`;
+  b.style.transform = `translate(${-dx}px, ${-dy}px)`;
   setTimeout(() => {
-    if (a) a.style.animation = '';
-    if (b) b.style.animation = '';
-  }, 360);
+    a.style.transition = ''; a.style.transform = '';
+    b.style.transition = ''; b.style.transform = '';
+  }, 170);
 }
 
-/* ── Match detection ── */
+/* ═══════════════ Match Detection ═══════════════ */
 function findMatches() {
-  const matched = new Map();
-
+  const m = new Map();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS - 2; c++) {
-      const v = board[r][c];
-      if (v === -1) continue;
-      let end = c;
-      while (end + 1 < COLS && board[r][end + 1] === v) end++;
-      if (end - c >= 2) {
-        for (let k = c; k <= end; k++) matched.set(key(r, k), true);
-      }
-      c = end;
+      const v = board[r][c]; if (v === -1) continue;
+      let e = c; while (e+1 < COLS && board[r][e+1] === v) e++;
+      if (e - c >= 2) { for (let i = c; i <= e; i++) m.set(k(r,i), true); }
+      c = e;
     }
   }
   for (let c = 0; c < COLS; c++) {
     for (let r = 0; r < ROWS - 2; r++) {
-      const v = board[r][c];
-      if (v === -1) continue;
-      let end = r;
-      while (end + 1 < ROWS && board[end + 1][c] === v) end++;
-      if (end - r >= 2) {
-        for (let k = r; k <= end; k++) matched.set(key(k, c), true);
-      }
-      r = end;
+      const v = board[r][c]; if (v === -1) continue;
+      let e = r; while (e+1 < ROWS && board[e+1][c] === v) e++;
+      if (e - r >= 2) { for (let i = r; i <= e; i++) m.set(k(i,c), true); }
+      r = e;
     }
   }
-  return matched;
+  return m;
 }
 
-/* ── Chain processing ── */
+/* ═══════════════ Chain ═══════════════ */
+let chainCombo = 0;
+
 async function processChain(matches) {
   while (matches.size > 0) {
-    combo++;
-    comboEl.textContent = combo;
-    if (combo > bestCombo) {
-      bestCombo = combo;
-      bestCbEl.textContent = bestCombo;
-    }
-    if (combo > 1) showComboToast();
-
-    const points = matches.size * 10 * combo;
-    score += points;
+    chainCombo++;
+    const pts = matches.size * 10 * chainCombo;
+    score += pts;
     scoreEl.textContent = score;
+    if (chainCombo > bestCombo) { bestCombo = chainCombo; comboEl.textContent = bestCombo; }
+    if (chainCombo >= 2) {
+      const msgs = {2:'🔥 连击!',3:'⚡ 三连击!',4:'💥 超级连击!',5:'🌟 完美连击!'};
+      toast(chainCombo >= 6 ? `🌈 ${chainCombo}连击!` : (msgs[chainCombo] || `✨ ${chainCombo}连击!`), 'combo');
+    }
 
     await animatePop(matches);
     await animateCascade();
-
     matches = findMatches();
   }
-  combo = 0;
-  comboEl.textContent = '0';
+  chainCombo = 0;
   checkGameOver();
 }
 
 function animatePop(matches) {
   return new Promise(resolve => {
-    let count = 0;
-    let firstEl = null;
-
-    for (const k of matches.keys()) {
-      const el = cellCache.get(k);
-      if (el) {
-        if (!firstEl) firstEl = el;
-        el.classList.add('matched');
-        count++;
-        board[parseCoord(k).r][parseCoord(k).c] = -1;
-      }
+    let count = 0; let first = null;
+    for (const key of matches.keys()) {
+      const el = cells.get(key);
+      if (el) { if (!first) first = el; el.classList.add('matched'); count++; board[parseRC(key).r][parseRC(key).c] = -1; }
     }
-
     if (count === 0) { resolve(); return; }
+    if (first) showFloat(first, '+' + (matches.size * 10 * chainCombo));
 
-    if (firstEl) {
-      showScorePop(firstEl, '+' + (matches.size * 10 * combo));
-    }
-
-    const handler = () => {
-      count--;
-      if (count <= 0) {
-        for (const k of matches.keys()) {
-          const el = cellCache.get(k);
-          if (el) el.classList.remove('matched');
-        }
-        resolve();
-      }
-    };
-
-    for (const k of matches.keys()) {
-      const el = cellCache.get(k);
-      if (el) {
-        el.addEventListener('animationend', handler, { once: true });
-      } else {
-        count--;
-        if (count <= 0) resolve();
-      }
+    const h = () => { count--; if (count <= 0) { for (const key of matches.keys()) { const el = cells.get(key); if (el) el.classList.remove('matched'); } resolve(); } };
+    for (const key of matches.keys()) {
+      const el = cells.get(key);
+      if (el) el.addEventListener('animationend', h, { once: true });
+      else { count--; if (count <= 0) resolve(); }
     }
   });
 }
@@ -1052,202 +836,128 @@ function animateCascade() {
   return new Promise(resolve => {
     const moved = [];
     for (let c = 0; c < COLS; c++) {
-      let writeRow = ROWS - 1;
+      let wr = ROWS - 1;
       for (let r = ROWS - 1; r >= 0; r--) {
         if (board[r][c] !== -1) {
-          if (writeRow !== r) {
-            board[writeRow][c] = board[r][c];
-            board[r][c] = -1;
-            moved.push({ r: writeRow, c, fromRow: r });
-          }
-          writeRow--;
+          if (wr !== r) { board[wr][c] = board[r][c]; board[r][c] = -1; moved.push({ r:wr, c }); }
+          wr--;
         }
       }
     }
-
     const filled = [];
     for (let c = 0; c < COLS; c++) {
       for (let r = 0; r < ROWS; r++) {
-        if (board[r][c] === -1) {
-          board[r][c] = randFruit();
-          filled.push({ r, c });
-        }
+        if (board[r][c] === -1) { board[r][c] = (Math.random()*N)|0; filled.push({r,c}); }
       }
     }
-
     render();
-
-    const allDropped = moved.concat(filled);
-    if (allDropped.length === 0) { resolve(); return; }
-
-    allDropped.sort((a, b) => b.r - a.r);
+    const all = [...moved, ...filled];
+    if (all.length === 0) { resolve(); return; }
+    all.sort((a,b) => b.r - a.r);
 
     let maxDelay = 0;
-    for (const { r, c } of allDropped) {
-      const el = cellCache.get(key(r, c));
+    for (const {r,c} of all) {
+      const el = cells.get(k(r,c));
       if (el) {
-        const delay = Math.min((ROWS - 1 - r) * 20, 100);
+        const delay = Math.min((ROWS-1-r)*18, 80);
         el.style.animationDelay = delay + 'ms';
-        el.classList.add('drop');
+        el.classList.add(r < 2 ? 'drop-fast' : 'drop');
         maxDelay = Math.max(maxDelay, delay);
       }
     }
-
-    const totalTime = 250 + maxDelay;
     setTimeout(() => {
-      for (const { r, c } of allDropped) {
-        const el = cellCache.get(key(r, c));
-        if (el) {
-          el.classList.remove('drop');
-          el.style.animationDelay = '';
-        }
-      }
+      for (const {r,c} of all) { const el = cells.get(k(r,c)); if (el) { el.classList.remove('drop','drop-fast'); el.style.animationDelay = ''; } }
       resolve();
-    }, totalTime);
+    }, 280 + maxDelay);
   });
 }
 
-function parseCoord(k) {
-  const [r, c] = k.split(',').map(Number);
-  return { r, c };
-}
+function parseRC(key) { const [r,c] = key.split(',').map(Number); return {r,c}; }
 
-/* ── Hint system ── */
+/* ═══════════════ Hint ═══════════════ */
 function findHint() {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (c + 1 < COLS) {
-        swap(r, c, r, c + 1);
-        if (findMatches().size > 0) {
-          swap(r, c, r, c + 1);
-          return [{ r, c }, { r, c: c + 1 }];
-        }
-        swap(r, c, r, c + 1);
-      }
-      if (r + 1 < ROWS) {
-        swap(r, c, r + 1, c);
-        if (findMatches().size > 0) {
-          swap(r, c, r + 1, c);
-          return [{ r, c }, { r: r + 1, c }];
-        }
-        swap(r, c, r + 1, c);
-      }
+      if (c+1<COLS) { swap(r,c,r,c+1); const m = findMatches(); swap(r,c,r,c+1); if (m.size) return [{r,c},{r,c:c+1}]; }
+      if (r+1<ROWS) { swap(r,c,r+1,c); const m = findMatches(); swap(r,c,r+1,c); if (m.size) return [{r,c},{r:r+1,c}]; }
     }
   }
   return null;
 }
 
-function showHint() {
+function doHint() {
   if (busy) return;
-  const hint = findHint();
-  if (!hint) {
-    showToastText('🔀 没有可消除的了，重新洗牌！');
-    setTimeout(resetGame, 1200);
-    return;
-  }
-
-  const [a, b] = hint;
-  const elA = cellCache.get(key(a.r, a.c));
-  const elB = cellCache.get(key(b.r, b.c));
-  if (!elA || !elB) return;
-
+  const h = findHint();
+  if (!h) { toast('🔀 没有可消除的了，重新洗牌！'); setTimeout(doReset, 1000); return; }
+  const [a,b] = h, ea = cells.get(k(a.r,a.c)), eb = cells.get(k(b.r,b.c));
+  if (!ea || !eb) return;
   let flashes = 0;
-  const origBgA = elA.style.background;
-  const origBgB = elB.style.background;
   const iv = setInterval(() => {
-    if (flashes >= 6) {
-      clearInterval(iv);
-      elA.style.background = origBgA;
-      elB.style.background = origBgB;
-      return;
-    }
-    const color = flashes % 2 === 0 ? '#f5c518' : '';
-    elA.style.background = color;
-    elB.style.background = color;
+    if (flashes >= 6) { clearInterval(iv); ea.style.outline = eb.style.outline = ''; return; }
+    ea.style.outline = eb.style.outline = flashes%2===0 ? '2px solid #d2991d' : '';
     flashes++;
   }, 180);
 }
 
+/* ═══════════════ Helpers ═══════════════ */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showFloat(el, text) {
+  const div = document.createElement('div');
+  div.className = 'float-text'; div.textContent = text;
+  const rect = el.getBoundingClientRect(), gridRect = gridEl.getBoundingClientRect();
+  div.style.left = (rect.left - gridRect.left + rect.width/2) + 'px';
+  div.style.top = (rect.top - gridRect.top) + 'px';
+  gridEl.appendChild(div);
+  div.addEventListener('animationend', () => div.remove(), { once: true });
+}
+
+/* ═══════════════ Persistence ═══════════════ */
+async function saveGame() {
+  if (!tok()) return;
+  try {
+    saveDot.textContent = '●'; saveDot.className = 'save-dot';
+    await api('POST', '/game/save', { board, score, moves, combo: 0, bestCombo });
+    saveDot.textContent = '✓'; saveDot.className = 'save-dot ok';
+    setTimeout(() => { if (saveDot.textContent === '✓') { saveDot.textContent = ''; } }, 2000);
+  } catch(_) { saveDot.textContent = ''; }
+}
+
+async function submitScore() {
+  if (!tok() || (score === 0 && bestCombo === 0)) return;
+  try { await api('POST', '/leaderboard/submit', { score, moves, bestCombo }); } catch(_){}
+}
+
 function checkGameOver() {
   if (!findHint()) {
-    showToastText('🔀 没有可消除的了，重新洗牌！');
-    // Submit score before reset
-    submitScore().then(() => resetGame());
+    toast('🔀 没有可消除的了，重新洗牌！');
+    submitScore().then(() => setTimeout(doReset, 1200));
     return;
   }
-
-  // Auto-save after a chain completes
   saveGame();
 }
 
-/* ── Visual FX ── */
-function showScorePop(el, text) {
-  const pop = document.createElement('div');
-  pop.className = 'score-pop';
-  pop.textContent = text;
-  pop.style.top = (el.offsetTop - 10) + 'px';
-  gridEl.appendChild(pop);
-  pop.addEventListener('animationend', () => pop.remove(), { once: true });
-}
-
-function showComboToast() {
-  const texts = { 2: '🔥 连击!', 3: '⚡ 三连击!', 4: '💥 超级连击!', 5: '🌟 完美连击!' };
-  const text = combo >= 6 ? `🌈 ${combo}连击!!` : (texts[combo] || `✨ ${combo}连击!`);
-  showToastText(text);
-}
-
-let toastTimer;
-function showToastText(text) {
-  clearTimeout(toastTimer);
-  toastEl.textContent = text;
-  toastEl.classList.remove('show');
-  void toastEl.offsetWidth;
-  toastEl.classList.add('show');
-  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1100);
-}
-
-/* ── Helpers ── */
-function rafSleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/* ── Reset ── */
-async function resetGame() {
-  // Submit current score before resetting
+/* ═══════════════ Reset ═══════════════ */
+async function doReset() {
   await submitScore();
-
   busy = false;
-  selected = null;
-  score = 0;
-  moves = 0;
-  combo = 0;
-  bestCombo = 0;
-  scoreEl.textContent = '0';
-  movesEl.textContent = '0';
-  comboEl.textContent = '0';
-  bestCbEl.textContent = '0';
-  cellCache.clear();
-  gridEl.innerHTML = '';
-  initBoard();
-  render();
+  score = 0; moves = 0; bestCombo = 0; chainCombo = 0;
+  scoreEl.textContent = '0'; movesEl.textContent = '0'; comboEl.textContent = '0';
+  saveDot.textContent = '';
+  cells.clear(); gridEl.innerHTML = '';
+  initBoard(); render();
 }
 
-// Button bindings
-document.getElementById('btnReset').addEventListener('click', resetGame);
-document.getElementById('btnHint').addEventListener('click', showHint);
-
-/* ── Start ── */
-function boot() {
-  updateAuthUI();
-  resetGame();
-  // If logged in, check for saved game
-  if (getToken()) {
-    loadGame();
-  }
+/* ═══════════════ Boot ═══════════════ */
+updateAuthUI();
+doReset();
+if (tok()) {
+  api('GET', '/game/load').then(s => {
+    if (s.hasSave && confirm(`检测到存档 (${s.updatedAt})\n得分 ${s.score} · 步数 ${s.moves}\n是否恢复？`)) {
+      loadFromSave(s);
+    }
+  }).catch(() => {});
 }
-
-boot();
 </script>
-
 </body>
 </html>
