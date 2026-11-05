@@ -1,0 +1,12 @@
+{
+  "name": "fruit-match",
+  "version": "1.0.0",
+  "description": "🍎 水果消消乐 - Fruit Match-3 Game with Backend",
+  "scripts": {
+    "start": "cd server && npm start",
+    "install": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

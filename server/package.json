@@ -1,0 +1,22 @@
+{
+  "name": "fruit-match-server",
+  "version": "1.0.0",
+  "description": "Backend for 水果消消乐 (Fruit Match-3)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "tunnel": "npx localtunnel --port 3000"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "sql.js": "^1.12.0"
+  },
+  "devDependencies": {
+    "bore-cli": "^0.1.11",
+    "localtunnel": "^2.0.2"
+  }
+}

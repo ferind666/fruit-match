@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍎 水果消消乐</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --panel: #16213e;
+    --accent: #e94560;
+    --gold: #f5c518;
+    --text: #eee;
+    --cell-bg: #0f3460;
+    --cell-hover: #1a508b;
+    --cell-select: #e94560;
+    --muted: #8899aa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: var(--text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .game-wrapper {
+    background: var(--panel);
+    border-radius: 24px;
+    padding: 24px 28px 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 520px;
+    width: 95%;
+  }
+
+  h1 {
+    font-size: 2rem;
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+
+  /* ── Auth bar ── */
+  .auth-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    width: 100%;
+    justify-content: center;
+    min-height: 32px;
+  }
+  .auth-bar .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .auth-bar .username {
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .auth-bar .btn-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .auth-bar .btn-link:hover { background: rgba(233,68,96,0.15); }
+  .auth-bar .btn-link.leaderboard-btn { color: var(--gold); }
+
+  /* ── Stats ── */
+  .stats {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat {
+    background: var(--cell-bg);
+    border-radius: 12px;
+    padding: 8px 18px;
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .stat.combo .stat-value { color: var(--accent); }
+
+  /* ── Grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 4px;
+    background: #0a0a1a;
+    border-radius: 16px;
+    padding: 6px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 440px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cell {
+    background: var(--cell-bg);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    cursor: pointer;
+    position: relative;
+    aspect-ratio: 1 / 1;
+    will-change: transform, opacity, background;
+    transform: translateZ(0);
+    transition: transform 0.12s ease-out, background 0.12s ease-out, box-shadow 0.12s ease-out;
+  }
+  .cell:hover {
+    background: var(--cell-hover);
+    transform: translateZ(0) scale(1.06);
+    z-index: 2;
+  }
+  .cell.selected {
+    background: var(--cell-select);
+    transform: translateZ(0) scale(1.1);
+    box-shadow: 0 0 18px rgba(233,68,96,0.7);
+    z-index: 3;
+    animation: pulse 0.7s ease-in-out infinite;
+  }
+  .cell.matched {
+    animation: pop 0.28s ease-out forwards;
+    pointer-events: none;
+  }
+  .cell.drop {
+    animation: dropIn 0.25s ease-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(233,68,96,0.6); }
+    50%      { box-shadow: 0 0 26px rgba(233,68,96,0.95); }
+  }
+  @keyframes pop {
+    0%   { transform: translateZ(0) scale(1); opacity: 1; }
+    50%  { transform: translateZ(0) scale(1.2); opacity: 0.5; }
+    100% { transform: translateZ(0) scale(0); opacity: 0; }
+  }
+  @keyframes dropIn {
+    0%   { transform: translateZ(0) translateY(-100%); opacity: 0; }
+    60%  { transform: translateZ(0) translateY(4px); opacity: 1; }
+    100% { transform: translateZ(0) translateY(0); opacity: 1; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateZ(0) translateX(0); }
+    20%  { transform: translateZ(0) translateX(-6px); }
+    40%  { transform: translateZ(0) translateX(6px); }
+    60%  { transform: translateZ(0) translateX(-4px); }
+    80%  { transform: translateZ(0) translateX(4px); }
+  }
+  @keyframes scorePopup {
+    0%   { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+    40%  { opacity: 1; transform: translate(-50%, -28px) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -52px) scale(1); }
+  }
+
+  .score-pop {
+    position: absolute;
+    pointer-events: none;
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: var(--gold);
+    text-shadow: 0 0 8px rgba(0,0,0,0.6);
+    animation: scorePopup 0.8s ease-out forwards;
+    z-index: 20;
+    left: 50%;
+    white-space: nowrap;
+  }
+
+  /* ── Buttons ── */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 12px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.15s, filter 0.15s;
+    will-change: transform;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-reset {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(233,68,96,0.4);
+  }
+  .btn-reset:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 6px 18px rgba(233,68,96,0.55);
+  }
+  .btn-hint {
+    background: #2d3436;
+    color: #dfe6e9;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .btn-hint:hover { filter: brightness(1.2); }
+
+  /* ── Combo toast ── */
+  .combo-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 3rem;
+    font-weight: 900;
+    pointer-events: none;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(245,197,24,0.9), 0 4px 8px rgba(0,0,0,0.6);
+    z-index: 100;
+    will-change: transform, opacity;
+  }
+  .combo-toast.show {
+    animation: toastOut 1.0s ease-out forwards;
+  }
+  @keyframes toastOut {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+    25%  { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    60%  { opacity: 1; }
+    100% { transform: translate(-50%, -60%) scale(1); opacity: 0; }
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .modal {
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 28px 24px 20px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .modal h2 {
+    text-align: center;
+    font-size: 1.4rem;
+    color: var(--gold);
+  }
+  .modal .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .modal .field label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .modal .field input {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--cell-bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .modal .field input:focus {
+    border-color: var(--accent);
+  }
+  .modal .modal-error {
+    color: var(--accent);
+    font-size: 0.82rem;
+    text-align: center;
+    min-height: 20px;
+  }
+  .modal .modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .modal .modal-btns .btn {
+    flex: 1;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-secondary {
+    background: var(--cell-bg);
+    color: var(--text);
+  }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-secondary:hover { filter: brightness(1.2); }
+
+  .modal .switch-text {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .modal .switch-text button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  /* ── Leaderboard table ── */
+  .lb-table-wrap {
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .lb-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+  }
+  .lb-table th.active { color: var(--gold); }
+  .lb-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .lb-table .rank { color: var(--gold); font-weight: 700; width: 40px; }
+  .lb-table .rank.top { color: var(--accent); }
+  .lb-table .lb-username { color: var(--text); }
+  .lb-table .lb-score { color: var(--gold); font-weight: 600; }
+  .lb-table .lb-combo { color: var(--accent); font-weight: 600; }
+
+  /* ── Save indicator ── */
+  .save-indicator {
+    font-size: 0.7rem;
+    color: var(--muted);
+    min-height: 16px;
+    transition: opacity 0.3s;
+  }
+  .save-indicator.saving { color: var(--gold); }
+  .save-indicator.saved  { color: #4ecb71; }
+
+  /* ── Responsive ── */
+  @media (max-width: 480px) {
+    .game-wrapper { padding: 16px 12px 12px; gap: 10px; }
+    .grid { gap: 3px; padding: 4px; }
+    .cell { border-radius: 7px; }
+    .stats { gap: 12px; }
+    h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="game-wrapper">
+  <h1>🍎 水果消消乐</h1>
+
+  <!-- Auth bar -->
+  <div class="auth-bar" id="authBar">
+    <button class="btn-link" id="btnLogin" onclick="showModal('login')">🔑 登录</button>
+    <button class="btn-link" id="btnRegister" onclick="showModal('register')">📝 注册</button>
+    <button class="btn-link leaderboard-btn" onclick="showLeaderboard()">🏆 排行榜</button>
+    <div class="user-info" id="userInfo" style="display:none">
+      <span>👤</span>
+      <span class="username" id="displayName"></span>
+      <button class="btn-link" onclick="logout()">退出</button>
+      <button class="btn-link leaderboard-btn" onclick="showLeaderboard()">🏆 排行榜</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">得分</div>
+      <div class="stat-value" id="score">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">步数</div>
+      <div class="stat-value" id="moves">0</div>
+    </div>
+    <div class="stat combo">
+      <div class="stat-label">连击</div>
+      <div class="stat-value" id="combo">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">最高连击</div>
+      <div class="stat-value" id="bestCombo">0</div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="save-indicator" id="saveIndicator"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-reset" id="btnReset">🔄 重新开始</button>
+    <button class="btn btn-hint" id="btnHint">💡 提示</button>
+  </div>
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<!-- Modal container -->
+<div id="modalContainer"></div>
+
+<script>
+/* ═════════════════════════════════════════════════════════════════════
+   Fruit Match-3  —  Game Engine + Backend Integration
+   ═══════════════════════════════════════════════════════════════════ */
+
+const ROWS = 8, COLS = 8;
+const FRUITS = ['🍎','🍊','🍋','🍇','🍓','🍒','🥝','🍑'];
+const FRUIT_COUNT = FRUITS.length;
+
+const API_BASE = '';
+
+const gridEl   = document.getElementById('grid');
+const scoreEl  = document.getElementById('score');
+const movesEl  = document.getElementById('moves');
+const comboEl  = document.getElementById('combo');
+const bestCbEl = document.getElementById('bestCombo');
+const toastEl  = document.getElementById('comboToast');
+const saveInd  = document.getElementById('saveIndicator');
+
+// State
+let board   = [];
+let score   = 0;
+let moves   = 0;
+let combo   = 0;
+let bestCombo = 0;
+let selected = null;
+let busy    = false;
+
+// Cell DOM cache — keyed by "r,c"
+const cellCache = new Map();
+
+/* ═══════════════════════════════════════════════════
+   API helpers
+   ═══════════════════════════════════════════════════ */
+
+function getToken() {
+  return localStorage.getItem('fruit-match-token');
+}
+
+function getUsername() {
+  return localStorage.getItem('fruit-match-username');
+}
+
+function setAuth(token, username) {
+  localStorage.setItem('fruit-match-token', token);
+  localStorage.setItem('fruit-match-username', username);
+}
+
+function clearAuth() {
+  localStorage.removeItem('fruit-match-token');
+  localStorage.removeItem('fruit-match-username');
+}
+
+async function api(method, path, body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  const token = getToken();
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(API_BASE + '/api' + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return data;
+}
+
+/* ── Auth ── */
+
+async function doRegister(username, password) {
+  const data = await api('POST', '/auth/register', { username, password });
+  setAuth(data.token, data.username);
+  return data;
+}
+
+async function doLogin(username, password) {
+  const data = await api('POST', '/auth/login', { username, password });
+  setAuth(data.token, data.username);
+  return data;
+}
+
+function logout() {
+  clearAuth();
+  updateAuthUI();
+}
+
+/* ── Game persistence ── */
+
+async function saveGame() {
+  if (!getToken()) return;
+  try {
+    saveInd.textContent = '💾 保存中…';
+    saveInd.className = 'save-indicator saving';
+    await api('POST', '/game/save', { board, score, moves, combo, bestCombo });
+    saveInd.textContent = '✅ 已保存';
+    saveInd.className = 'save-indicator saved';
+    setTimeout(() => {
+      if (saveInd.textContent === '✅ 已保存') {
+        saveInd.textContent = '';
+      }
+    }, 2000);
+  } catch {
+    saveInd.textContent = '⚠ 保存失败';
+    saveInd.className = 'save-indicator';
+  }
+}
+
+async function loadGame() {
+  if (!getToken()) return;
+  try {
+    const data = await api('GET', '/game/load');
+    if (!data.hasSave) return;
+
+    // Ask user
+    const yes = confirm(`检测到存档 (${data.updatedAt})\n得分: ${data.score}  步数: ${data.moves}\n\n是否恢复？`);
+    if (!yes) {
+      // Delete old save so it doesn't keep asking
+      await api('DELETE', '/game/delete');
+      return;
+    }
+
+    busy = false;
+    selected = null;
+    score = data.score;
+    moves = data.moves;
+    combo = data.combo;
+    bestCombo = data.bestCombo;
+    board = data.board;
+
+    scoreEl.textContent = score;
+    movesEl.textContent = moves;
+    comboEl.textContent = combo;
+    bestCbEl.textContent = bestCombo;
+
+    cellCache.clear();
+    gridEl.innerHTML = '';
+    render();
+    saveInd.textContent = '✅ 存档已恢复';
+    saveInd.className = 'save-indicator saved';
+    setTimeout(() => { saveInd.textContent = ''; }, 2000);
+  } catch {
+    // Silently fail — game still works offline
+  }
+}
+
+async function submitScore() {
+  if (!getToken()) return;
+  if (score === 0 && bestCombo === 0) return;
+  try {
+    await api('POST', '/leaderboard/submit', { score, moves, bestCombo });
+  } catch {
+    // Silently fail
+  }
+}
+
+/* ── Auth UI ── */
+
+function updateAuthUI() {
+  const token = getToken();
+  const username = getUsername();
+  document.getElementById('btnLogin').style.display = token ? 'none' : '';
+  document.getElementById('btnRegister').style.display = token ? 'none' : '';
+  document.getElementById('userInfo').style.display = token ? 'flex' : 'none';
+  if (token) {
+    document.getElementById('displayName').textContent = username;
+  }
+}
+
+/* ── Modal system ── */
+
+function showModal(type) {
+  const container = document.getElementById('modalContainer');
+  const isRegister = type === 'register';
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>${isRegister ? '📝 注册' : '🔑 登录'}</h2>
+        <div class="field">
+          <label>用户名</label>
+          <input id="modalUsername" type="text" maxlength="20" placeholder="输入用户名" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input id="modalPassword" type="password" maxlength="64" placeholder="输入密码" autocomplete="${isRegister ? 'new-password' : 'current-password'}">
+        </div>
+        <div class="modal-error" id="modalError"></div>
+        <div class="modal-btns">
+          <button class="btn btn-primary" id="modalSubmit">${isRegister ? '注册' : '登录'}</button>
+          <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        </div>
+        <div class="switch-text">
+          ${isRegister ? '已有账号？' : '没有账号？'}
+          <button onclick="showModal('${isRegister ? 'login' : 'register'}')">${isRegister ? '去登录' : '去注册'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const usernameInput = document.getElementById('modalUsername');
+  const passwordInput = document.getElementById('modalPassword');
+  const submitBtn = document.getElementById('modalSubmit');
+  const errorEl = document.getElementById('modalError');
+
+  usernameInput.focus();
+
+  async function handleSubmit() {
+    errorEl.textContent = '';
+    const u = usernameInput.value.trim();
+    const p = passwordInput.value;
+    if (!u || !p) { errorEl.textContent = '请填写所有字段'; return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '处理中…';
+    try {
+      if (isRegister) {
+        await doRegister(u, p);
+      } else {
+        await doLogin(u, p);
+      }
+      updateAuthUI();
+      closeModal();
+      // Try to load saved game
+      await loadGame();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isRegister ? '注册' : '登录';
+    }
+  }
+
+  submitBtn.addEventListener('click', handleSubmit);
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSubmit();
+  });
+  usernameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') passwordInput.focus();
+  });
+}
+
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+/* ── Leaderboard ── */
+
+async function showLeaderboard() {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:460px">
+        <h2>🏆 排行榜</h2>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-primary btn-small" id="lbSortScore" style="font-size:0.82rem;padding:6px 14px">按得分</button>
+          <button class="btn btn-secondary btn-small" id="lbSortCombo" style="font-size:0.82rem;padding:6px 14px">按连击</button>
+        </div>
+        <div class="lb-table-wrap" id="lbTableWrap">
+          <p style="text-align:center;color:var(--muted);padding:20px">加载中…</p>
+        </div>
+        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+      </div>
+    </div>
+  `;
+
+  async function loadLB(sortBy) {
+    const wrap = document.getElementById('lbTableWrap');
+    document.getElementById('lbSortScore').className = 'btn ' + (sortBy === 'score' ? 'btn-primary' : 'btn-secondary') + ' btn-small';
+    document.getElementById('lbSortCombo').className = 'btn ' + (sortBy === 'combo' ? 'btn-primary' : 'btn-secondary') + ' btn-small';
+
+    try {
+      const data = await api('GET', '/leaderboard?sortBy=' + sortBy + '&limit=30');
+      if (data.leaderboard.length === 0) {
+        wrap.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">还没有记录，快去玩一局吧！</p>';
+        return;
+      }
+
+      const rows = data.leaderboard.map((r, i) => `
+        <tr>
+          <td class="rank${i < 3 ? ' top' : ''}">#${r.rank}</td>
+          <td class="lb-username">${escHtml(r.username)}</td>
+          <td class="lb-score">${r.score}</td>
+          <td class="lb-combo">${r.best_combo}</td>
+          <td style="font-size:0.75rem;color:var(--muted)">${r.played_at?.slice(0,10) || ''}</td>
+        </tr>
+      `).join('');
+
+      wrap.innerHTML = `
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>玩家</th>
+              <th class="${sortBy === 'score' ? 'active' : ''}">得分</th>
+              <th class="${sortBy === 'combo' ? 'active' : ''}">最高连击</th>
+              <th>日期</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    } catch {
+      wrap.innerHTML = '<p style="text-align:center;color:var(--accent);padding:20px">加载失败</p>';
+    }
+  }
+
+  document.getElementById('lbSortScore').addEventListener('click', () => loadLB('score'));
+  document.getElementById('lbSortCombo').addEventListener('click', () => loadLB('combo'));
+  await loadLB('score');
+}
+
+function escHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/* ═══════════════════════════════════════════════════
+   Game Engine
+   ═══════════════════════════════════════════════════ */
+
+/* ── Init board (no matches) ── */
+function initBoard() {
+  board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      let fruit;
+      do {
+        fruit = randFruit();
+      } while (
+        (r >= 2 && board[r-1][c] === fruit && board[r-2][c] === fruit) ||
+        (c >= 2 && board[r][c-1] === fruit && board[r][c-2] === fruit)
+      );
+      board[r][c] = fruit;
+    }
+  }
+}
+
+function randFruit() {
+  return (Math.random() * FRUIT_COUNT) | 0;
+}
+
+/* ── Cell cache helpers ── */
+function key(r, c) { return r + ',' + c; }
+
+function createCell(r, c) {
+  const el = document.createElement('div');
+  el.className = 'cell';
+  el.dataset.r = r;
+  el.dataset.c = c;
+  el.addEventListener('click', () => onCellClick(r, c));
+  el.addEventListener('pointerdown', (e) => {
+    if (busy) e.preventDefault();
+  });
+  return el;
+}
+
+/* ── Render: differential update ── */
+function render() {
+  const seen = new Set();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const k = key(r, c);
+      seen.add(k);
+      let el = cellCache.get(k);
+      if (!el) {
+        el = createCell(r, c);
+        cellCache.set(k, el);
+        gridEl.appendChild(el);
+      }
+      el.textContent = FRUITS[board[r][c]];
+
+      if (selected && selected.r === r && selected.c === c) {
+        el.classList.add('selected');
+      } else {
+        el.classList.remove('selected');
+      }
+    }
+  }
+  for (const [k, el] of cellCache) {
+    if (!seen.has(k)) {
+      el.remove();
+      cellCache.delete(k);
+    }
+  }
+}
+
+/* ── Click & Swap ── */
+function onCellClick(r, c) {
+  if (busy) return;
+
+  if (!selected) {
+    selected = { r, c };
+    render();
+    return;
+  }
+
+  const sr = selected.r, sc = selected.c;
+  if (sr === r && sc === c) {
+    selected = null;
+    render();
+    return;
+  }
+
+  const dr = Math.abs(sr - r);
+  const dc = Math.abs(sc - c);
+  if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+    trySwap(sr, sc, r, c);
+  } else {
+    selected = { r, c };
+    render();
+  }
+}
+
+async function trySwap(r1, c1, r2, c2) {
+  busy = true;
+  selected = null;
+  render();
+
+  animateSwap(r1, c1, r2, c2);
+
+  swap(r1, c1, r2, c2);
+  render();
+  await rafSleep(150);
+
+  const matches = findMatches();
+  if (matches.size > 0) {
+    moves++;
+    movesEl.textContent = moves;
+    combo = 0;
+    await processChain(matches);
+  } else {
+    animateSwap(r1, c1, r2, c2);
+    swap(r1, c1, r2, c2);
+    render();
+    await rafSleep(150);
+    shakeCells(r1, c1, r2, c2);
+  }
+
+  busy = false;
+  render();
+}
+
+function swap(r1, c1, r2, c2) {
+  const t = board[r1][c1];
+  board[r1][c1] = board[r2][c2];
+  board[r2][c2] = t;
+}
+
+function animateSwap(r1, c1, r2, c2) {
+  const a = cellCache.get(key(r1, c1));
+  const b = cellCache.get(key(r2, c2));
+  if (!a || !b) return;
+
+  const aRect = a.getBoundingClientRect();
+  const bRect = b.getBoundingClientRect();
+  const dx = bRect.left - aRect.left;
+  const dy = bRect.top - aRect.top;
+
+  a.style.transition = 'transform 0.15s ease-out';
+  b.style.transition = 'transform 0.15s ease-out';
+  a.style.transform = `translateZ(0) translate(${dx}px, ${dy}px)`;
+  b.style.transform = `translateZ(0) translate(${-dx}px, ${-dy}px)`;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      a.style.transition = '';
+      a.style.transform = '';
+      b.style.transition = '';
+      b.style.transform = '';
+    });
+  });
+}
+
+function shakeCells(r1, c1, r2, c2) {
+  const a = cellCache.get(key(r1, c1));
+  const b = cellCache.get(key(r2, c2));
+  if (a) { a.style.animation = 'shake 0.35s ease'; }
+  if (b) { b.style.animation = 'shake 0.35s ease'; }
+  setTimeout(() => {
+    if (a) a.style.animation = '';
+    if (b) b.style.animation = '';
+  }, 360);
+}
+
+/* ── Match detection ── */
+function findMatches() {
+  const matched = new Map();
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 2; c++) {
+      const v = board[r][c];
+      if (v === -1) continue;
+      let end = c;
+      while (end + 1 < COLS && board[r][end + 1] === v) end++;
+      if (end - c >= 2) {
+        for (let k = c; k <= end; k++) matched.set(key(r, k), true);
+      }
+      c = end;
+    }
+  }
+  for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < ROWS - 2; r++) {
+      const v = board[r][c];
+      if (v === -1) continue;
+      let end = r;
+      while (end + 1 < ROWS && board[end + 1][c] === v) end++;
+      if (end - r >= 2) {
+        for (let k = r; k <= end; k++) matched.set(key(k, c), true);
+      }
+      r = end;
+    }
+  }
+  return matched;
+}
+
+/* ── Chain processing ── */
+async function processChain(matches) {
+  while (matches.size > 0) {
+    combo++;
+    comboEl.textContent = combo;
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      bestCbEl.textContent = bestCombo;
+    }
+    if (combo > 1) showComboToast();
+
+    const points = matches.size * 10 * combo;
+    score += points;
+    scoreEl.textContent = score;
+
+    await animatePop(matches);
+    await animateCascade();
+
+    matches = findMatches();
+  }
+  combo = 0;
+  comboEl.textContent = '0';
+  checkGameOver();
+}
+
+function animatePop(matches) {
+  return new Promise(resolve => {
+    let count = 0;
+    let firstEl = null;
+
+    for (const k of matches.keys()) {
+      const el = cellCache.get(k);
+      if (el) {
+        if (!firstEl) firstEl = el;
+        el.classList.add('matched');
+        count++;
+        board[parseCoord(k).r][parseCoord(k).c] = -1;
+      }
+    }
+
+    if (count === 0) { resolve(); return; }
+
+    if (firstEl) {
+      showScorePop(firstEl, '+' + (matches.size * 10 * combo));
+    }
+
+    const handler = () => {
+      count--;
+      if (count <= 0) {
+        for (const k of matches.keys()) {
+          const el = cellCache.get(k);
+          if (el) el.classList.remove('matched');
+        }
+        resolve();
+      }
+    };
+
+    for (const k of matches.keys()) {
+      const el = cellCache.get(k);
+      if (el) {
+        el.addEventListener('animationend', handler, { once: true });
+      } else {
+        count--;
+        if (count <= 0) resolve();
+      }
+    }
+  });
+}
+
+function animateCascade() {
+  return new Promise(resolve => {
+    const moved = [];
+    for (let c = 0; c < COLS; c++) {
+      let writeRow = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r][c] !== -1) {
+          if (writeRow !== r) {
+            board[writeRow][c] = board[r][c];
+            board[r][c] = -1;
+            moved.push({ r: writeRow, c, fromRow: r });
+          }
+          writeRow--;
+        }
+      }
+    }
+
+    const filled = [];
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        if (board[r][c] === -1) {
+          board[r][c] = randFruit();
+          filled.push({ r, c });
+        }
+      }
+    }
+
+    render();
+
+    const allDropped = moved.concat(filled);
+    if (allDropped.length === 0) { resolve(); return; }
+
+    allDropped.sort((a, b) => b.r - a.r);
+
+    let maxDelay = 0;
+    for (const { r, c } of allDropped) {
+      const el = cellCache.get(key(r, c));
+      if (el) {
+        const delay = Math.min((ROWS - 1 - r) * 20, 100);
+        el.style.animationDelay = delay + 'ms';
+        el.classList.add('drop');
+        maxDelay = Math.max(maxDelay, delay);
+      }
+    }
+
+    const totalTime = 250 + maxDelay;
+    setTimeout(() => {
+      for (const { r, c } of allDropped) {
+        const el = cellCache.get(key(r, c));
+        if (el) {
+          el.classList.remove('drop');
+          el.style.animationDelay = '';
+        }
+      }
+      resolve();
+    }, totalTime);
+  });
+}
+
+function parseCoord(k) {
+  const [r, c] = k.split(',').map(Number);
+  return { r, c };
+}
+
+/* ── Hint system ── */
+function findHint() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (c + 1 < COLS) {
+        swap(r, c, r, c + 1);
+        if (findMatches().size > 0) {
+          swap(r, c, r, c + 1);
+          return [{ r, c }, { r, c: c + 1 }];
+        }
+        swap(r, c, r, c + 1);
+      }
+      if (r + 1 < ROWS) {
+        swap(r, c, r + 1, c);
+        if (findMatches().size > 0) {
+          swap(r, c, r + 1, c);
+          return [{ r, c }, { r: r + 1, c }];
+        }
+        swap(r, c, r + 1, c);
+      }
+    }
+  }
+  return null;
+}
+
+function showHint() {
+  if (busy) return;
+  const hint = findHint();
+  if (!hint) {
+    showToastText('🔀 没有可消除的了，重新洗牌！');
+    setTimeout(resetGame, 1200);
+    return;
+  }
+
+  const [a, b] = hint;
+  const elA = cellCache.get(key(a.r, a.c));
+  const elB = cellCache.get(key(b.r, b.c));
+  if (!elA || !elB) return;
+
+  let flashes = 0;
+  const origBgA = elA.style.background;
+  const origBgB = elB.style.background;
+  const iv = setInterval(() => {
+    if (flashes >= 6) {
+      clearInterval(iv);
+      elA.style.background = origBgA;
+      elB.style.background = origBgB;
+      return;
+    }
+    const color = flashes % 2 === 0 ? '#f5c518' : '';
+    elA.style.background = color;
+    elB.style.background = color;
+    flashes++;
+  }, 180);
+}
+
+function checkGameOver() {
+  if (!findHint()) {
+    showToastText('🔀 没有可消除的了，重新洗牌！');
+    // Submit score before reset
+    submitScore().then(() => resetGame());
+    return;
+  }
+
+  // Auto-save after a chain completes
+  saveGame();
+}
+
+/* ── Visual FX ── */
+function showScorePop(el, text) {
+  const pop = document.createElement('div');
+  pop.className = 'score-pop';
+  pop.textContent = text;
+  pop.style.top = (el.offsetTop - 10) + 'px';
+  gridEl.appendChild(pop);
+  pop.addEventListener('animationend', () => pop.remove(), { once: true });
+}
+
+function showComboToast() {
+  const texts = { 2: '🔥 连击!', 3: '⚡ 三连击!', 4: '💥 超级连击!', 5: '🌟 完美连击!' };
+  const text = combo >= 6 ? `🌈 ${combo}连击!!` : (texts[combo] || `✨ ${combo}连击!`);
+  showToastText(text);
+}
+
+let toastTimer;
+function showToastText(text) {
+  clearTimeout(toastTimer);
+  toastEl.textContent = text;
+  toastEl.classList.remove('show');
+  void toastEl.offsetWidth;
+  toastEl.classList.add('show');
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1100);
+}
+
+/* ── Helpers ── */
+function rafSleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/* ── Reset ── */
+async function resetGame() {
+  // Submit current score before resetting
+  await submitScore();
+
+  busy = false;
+  selected = null;
+  score = 0;
+  moves = 0;
+  combo = 0;
+  bestCombo = 0;
+  scoreEl.textContent = '0';
+  movesEl.textContent = '0';
+  comboEl.textContent = '0';
+  bestCbEl.textContent = '0';
+  cellCache.clear();
+  gridEl.innerHTML = '';
+  initBoard();
+  render();
+}
+
+// Button bindings
+document.getElementById('btnReset').addEventListener('click', resetGame);
+document.getElementById('btnHint').addEventListener('click', showHint);
+
+/* ── Start ── */
+function boot() {
+  updateAuthUI();
+  resetGame();
+  // If logged in, check for saved game
+  if (getToken()) {
+    loadGame();
+  }
+}
+
+boot();
+</script>
+
+</body>
+</html>
